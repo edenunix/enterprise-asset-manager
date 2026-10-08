@@ -1,18 +1,40 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-
 export async function POST(request) {
   try {
     const { prompt, patrimoine } = await request.json();
-    
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    const apiKey = process.env.GEMINI_API_KEY;
 
-    const result = await model.generateContent(
-      `En tant qu'assistant de gestion d'actifs, analyse cette demande : "${prompt}" en te basant sur cet inventaire : ${JSON.stringify(patrimoine)}. Réponds en français.`
-    );
-    const response = await result.response;
+    if (!apiKey) {
+      return Response.json({ error: "La clé GEMINI_API_KEY est manquante sur Vercel." }, { status: 500 });
+    }
 
-    return Response.json({ result: response.text() });
+    // Appel direct de l'API REST officielle Gemini (modèle gemini-1.5-flash)
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+    const apiResponse = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: `En tant qu'assistant de gestion d'actifs, analyse cette demande : "${prompt}" en te basant sur cet inventaire : ${JSON.stringify(patrimoine)}. Réponds directement en français.`
+              }
+            ]
+          }
+        ]
+      })
+    });
+
+    const data = await apiResponse.json();
+
+    if (!apiResponse.ok) {
+      throw new Error(data.error?.message || "Erreur de l'API Gemini");
+    }
+
+    const textResult = data.candidates?.[0]?.content?.parts?.[0]?.text || "Aucune réponse générée.";
+
+    return Response.json({ result: textResult });
   } catch (error) {
     return Response.json({ error: error.message || "Erreur serveur" }, { status: 500 });
   }
