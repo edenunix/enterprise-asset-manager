@@ -14,6 +14,7 @@ export async function POST(request) {
 
     return Response.json({ result: response.text() });
   } catch (error) {
-    return Response.json({ error: error.message || "Erreur serveur" }, { status: 500 });
+    // Renvoie l'erreur exacte pour comprendre d'où elle vient
+    return Response.json({ result: "Erreur technique : " + error.message }, { status: 500 });
   }
 }
