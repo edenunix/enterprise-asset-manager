@@ -5,7 +5,7 @@ import {
   Activity, ArrowRight, Bell, Building2, CalendarClock, CheckCircle2,
   CircleDollarSign, ClipboardList, Download, FileBarChart, LayoutDashboard,
   Menu, Monitor, MoreHorizontal, Package, Plus, Search, Settings2, ShieldCheck,
-  Truck, Wrench, X, Pencil, Trash2,
+  Truck, Wrench, X, Pencil, Trash2, Sparkles,
 } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
@@ -44,7 +44,7 @@ const NAV = [
   { label: "Vue d'ensemble", icon: LayoutDashboard }, { label: "Patrimoine", icon: Package },
   { label: "Catégories", icon: ClipboardList }, { label: "Affectations", icon: Building2 },
   { label: "Maintenance", icon: Wrench }, { label: "Finances", icon: CircleDollarSign },
-  { label: "Rapports", icon: FileBarChart },
+  { label: "Rapports", icon: FileBarChart }, { label: "Assistant IA", icon: Sparkles },
 ];
 const money = (n: number) => new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(n);
 const today = () => new Date().toISOString().slice(0, 10);
@@ -70,6 +70,11 @@ export default function DashboardPage() {
   const [mobileMenu, setMobileMenu] = useState(false);
   const [message, setMessage] = useState("");
   const [settingsName, setSettingsName] = useState("Workspace Admin");
+  
+  // États pour l'Assistant IA
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiResponse, setAiResponse] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
 
   useEffect(() => {
     try {
@@ -94,6 +99,28 @@ export default function DashboardPage() {
     return haystack.includes(query.trim().toLowerCase()) && (statusFilter === "Tous" || item.status === statusFilter);
   }), [rows, query, statusFilter]);
   function notify(text: string) { setMessage(text); window.setTimeout(() => setMessage(""), 4000); }
+
+  async function handleAiQuery() {
+    if (!aiPrompt.trim()) return;
+    setAiLoading(true);
+    setAiResponse("");
+    try {
+      const res = await fetch('/api/assistant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: aiPrompt, patrimoine: assets })
+      });
+      const data = await res.json();
+      if (data.result) {
+        setAiResponse(data.result);
+      } else {
+        setAiResponse("Une erreur est survenue.");
+      }
+    } catch {
+      setAiResponse("Impossible de contacter l'assistant.");
+    }
+    setAiLoading(false);
+  }
 
   function askForRecord(page: string, existing?: RecordItem) {
     const nouns: Record<string, string> = { Patrimoine: "bien", Catégories: "catégorie", Affectations: "affectation", Maintenance: "intervention", Finances: "transaction" };
@@ -146,6 +173,7 @@ export default function DashboardPage() {
 
   const isOverview = activePage === "Vue d'ensemble";
   const isReports = activePage === "Rapports";
+  const isAiAssistant = activePage === "Assistant IA";
   const categories = [...new Set(assets.map(item => item.category))];
   const chartData = [
     { month: "Avr", value: Math.round(totalValue * 0.72) }, { month: "Mai", value: Math.round(totalValue * 0.78) },
@@ -166,10 +194,44 @@ export default function DashboardPage() {
     </aside>
     <main className="main-content">
       <header className="mb-8 flex flex-wrap items-center justify-between gap-4"><div><div className="mb-2 flex items-center gap-2 text-xs text-gray-400"><span>Workspace</span><span>/</span><span className="font-medium text-gray-600">{activePage}</span></div><h1 className="text-2xl font-bold tracking-tight">{isOverview ? "Vue d'ensemble" : activePage === "Patrimoine" ? "Gestion du patrimoine" : activePage}</h1><p className="mt-1 text-[13px] text-gray-500">{isOverview ? "Voici l'état de votre patrimoine aujourd'hui." : `Consultez et gérez votre espace ${activePage.toLowerCase()}.`}</p></div>
-        <div className="flex items-center gap-2"><div className="hidden items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-500 sm:flex"><CalendarClock size={15} />{new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" })}</div><div className="relative"><button aria-label="Notifications" onClick={() => setShowNotifications(v => !v)} className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white"><Bell size={18} />{maintenanceCount > 0 && <span className="absolute right-2 top-2 h-2 w-2 rounded-full border-2 border-white bg-red-500" />}</button>{showNotifications && <div className="panel absolute right-0 top-12 z-20 w-72 p-4 shadow-lg"><p className="font-semibold">Notifications</p><p className="mt-3 text-xs leading-5 text-gray-500">{maintenanceCount ? `${maintenanceCount} intervention(s) restent à traiter.` : "Aucune intervention en attente."}</p><button className="mt-3 text-xs font-semibold text-emerald-800" onClick={() => { setActivePage("Maintenance"); setShowNotifications(false); }}>Voir la maintenance →</button></div>}</div>{!isOverview && !isReports && activePage !== "Paramètres" && <button onClick={() => askForRecord(activePage)} className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold text-white" style={{ background: "#174b3a" }}><Plus size={16} /><span>Nouveau</span></button>}</div>
+        <div className="flex items-center gap-2"><div className="hidden items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-500 sm:flex"><CalendarClock size={15} />{new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" })}</div><div className="relative"><button aria-label="Notifications" onClick={() => setShowNotifications(v => !v)} className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white"><Bell size={18} />{maintenanceCount > 0 && <span className="absolute right-2 top-2 h-2 w-2 rounded-full border-2 border-white bg-red-500" />}</button>{showNotifications && <div className="panel absolute right-0 top-12 z-20 w-72 p-4 shadow-lg"><p className="font-semibold">Notifications</p><p className="mt-3 text-xs leading-5 text-gray-500">{maintenanceCount ? `${maintenanceCount} intervention(s) restent à traiter.` : "Aucune intervention en attente."}</p><button className="mt-3 text-xs font-semibold text-emerald-800" onClick={() => { setActivePage("Maintenance"); setShowNotifications(false); }}>Voir la maintenance →</button></div>}</div>{!isOverview && !isReports && !isAiAssistant && activePage !== "Paramètres" && <button onClick={() => askForRecord(activePage)} className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold text-white" style={{ background: "#174b3a" }}><Plus size={16} /><span>Nouveau</span></button>}</div>
       </header>
       {message && <div role="status" className="mb-5 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs text-emerald-800"><CheckCircle2 size={17} /><span>{message}</span><button className="ml-auto" onClick={() => setMessage("")}><X size={16} /></button></div>}
-      {isOverview ? <>
+      
+      {isAiAssistant ? (
+        <section className="panel p-6">
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles size={20} color="#174b3a" />
+            <h2 className="text-lg font-bold">Assistant Intelligent Gemini</h2>
+          </div>
+          <p className="text-xs text-gray-500">Posez vos questions en langage naturel sur votre inventaire et vos actifs.</p>
+          
+          <div className="mt-6 flex gap-2">
+            <input
+              type="text"
+              value={aiPrompt}
+              onChange={(e) => setAiPrompt(e.target.value)}
+              placeholder="Ex: Quel est le matériel le plus cher ? Résume l'état du parc informatique..."
+              className="flex-1 rounded-lg border border-gray-200 px-3 py-3 text-xs outline-none focus:border-emerald-700"
+            />
+            <button
+              onClick={handleAiQuery}
+              disabled={aiLoading}
+              className="rounded-xl px-5 py-3 text-xs font-semibold text-white transition hover:opacity-90"
+              style={{ background: "#174b3a" }}
+            >
+              {aiLoading ? "Analyse..." : "Demander à l'IA"}
+            </button>
+          </div>
+
+          {aiResponse && (
+            <div className="mt-6 rounded-xl border border-emerald-100 bg-emerald-50/40 p-5">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-emerald-900 mb-2">Réponse de l'assistant :</h3>
+              <p className="text-xs leading-relaxed text-gray-700 whitespace-pre-wrap">{aiResponse}</p>
+            </div>
+          )}
+        </section>
+      ) : isOverview ? <>
         <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"><Metric title="Valeur du patrimoine" value={`${money(totalValue)} DJF`} icon={<CircleDollarSign size={20} color="#26744b" />} note="Valeur cumulée des biens" /><Metric title="Total des biens" value={String(assets.length)} icon={<Package size={20} color="#4168ad" />} note={`${categories.length} catégorie(s)`} /><Metric title="En maintenance" value={String(assets.filter(x => x.status === "Maintenance").length)} icon={<Wrench size={20} color="#b47b24" />} note={`${maintenanceCount} intervention(s) ouverte(s)`} /><Metric title="Coût des interventions" value={`${money((store.Maintenance ?? []).reduce((s, x) => s + x.value, 0))} DJF`} icon={<CalendarClock size={20} color="#8954aa" />} note="Montant enregistré" /></div>
         <div className="mb-5 grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.7fr)_minmax(270px,1fr)]"><section className="panel p-5"><h2 className="text-sm font-semibold">Évolution du patrimoine</h2><p className="mt-1 text-xs text-gray-400">Valeur indicative basée sur l'inventaire courant</p><div className="mt-5 h-[240px] w-full"><ResponsiveContainer width="100%" height="100%"><AreaChart data={chartData} margin={{ top: 10, right: 5, left: -18, bottom: 0 }}><defs><linearGradient id="assetGradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#2b7856" stopOpacity={0.2} /><stop offset="95%" stopColor="#2b7856" stopOpacity={0} /></linearGradient></defs><CartesianGrid stroke="#edf0ed" strokeDasharray="4 4" vertical={false} /><XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: "#89958e", fontSize: 11 }} /><YAxis tickFormatter={(v: number) => `${Math.round(v / 1000)}k`} axisLine={false} tickLine={false} tick={{ fill: "#89958e", fontSize: 11 }} /><Tooltip formatter={(value) => [`${money(Number(value))} DJF`, "Valeur"]} /><Area type="monotone" dataKey="value" stroke="#26744b" strokeWidth={2.5} fill="url(#assetGradient)" /></AreaChart></ResponsiveContainer></div></section>
           <section className="panel p-5"><h2 className="text-sm font-semibold">Répartition des biens</h2><p className="mt-1 text-xs text-gray-400">Par catégorie</p><div className="mt-6 space-y-5">{categories.map((category, index) => { const count = assets.filter(x => x.category === category).length; const percent = assets.length ? Math.round(count / assets.length * 100) : 0; const colors = ["#26744b", "#6e91d2", "#d9a34b", "#9b83c7", "#c76f6f"]; return <div key={category}><div className="mb-2 flex items-center justify-between"><span className="flex items-center gap-2 text-xs text-gray-600"><span className="h-2.5 w-2.5 rounded-full" style={{ background: colors[index % colors.length] }} />{category}</span><span className="text-xs font-semibold">{count}</span></div><div className="h-2 overflow-hidden rounded-full bg-gray-100"><div className="h-full rounded-full" style={{ width: `${percent}%`, background: colors[index % colors.length] }} /></div></div>; })}{categories.length === 0 && <p className="text-xs text-gray-400">Aucune catégorie enregistrée.</p>}</div><button onClick={() => setActivePage("Patrimoine")} className="mt-7 flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 py-2.5 text-xs font-medium text-gray-600 hover:bg-gray-50">Voir tous les biens <ArrowRight size={14} /></button></section></div>
