@@ -113,11 +113,13 @@ export default function DashboardPage() {
       const data = await res.json();
       if (data.result) {
         setAiResponse(data.result);
+      } else if (data.error) {
+        setAiResponse("Erreur : " + data.error);
       } else {
-        setAiResponse("Une erreur est survenue.");
+        setAiResponse("Réponse vide du serveur.");
       }
-    } catch {
-      setAiResponse("Impossible de contacter l'assistant.");
+    } catch (err: any) {
+      setAiResponse("Impossible de contacter l'assistant : " + (err.message || "Erreur réseau"));
     }
     setAiLoading(false);
   }
