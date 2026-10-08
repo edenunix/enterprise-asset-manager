@@ -7,8 +7,7 @@ export async function POST(request) {
       return Response.json({ error: "La clé GEMINI_API_KEY est manquante sur Vercel." }, { status: 500 });
     }
 
-    // Appel direct de l'API REST officielle Gemini (modèle gemini-1.5-flash)
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
     const apiResponse = await fetch(url, {
       method: "POST",
