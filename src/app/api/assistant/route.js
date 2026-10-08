@@ -1,18 +1,18 @@
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 export async function POST(request) {
   try {
-    const body = await request.json();
-    const { prompt, patrimoine } = body;
+    const { prompt, patrimoine } = await request.json();
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const result = await model.generateContent(
+      `En tant qu'assistant de gestion d'actifs, analyse cette demande : "${prompt}" en te basant sur cet inventaire : ${JSON.stringify(patrimoine)}`
+    );
+    const response = await result.response;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: `En tant qu'assistant de gestion d'actifs, analyse cette demande : "${prompt}" en te basant sur cet inventaire : ${JSON.stringify(patrimoine)}`,
-    });
-
-    return Response.json({ result: response.text });
+    return Response.json({ result: response.text() });
   } catch (error) {
     return Response.json({ error: error.message || "Erreur serveur" }, { status: 500 });
   }
