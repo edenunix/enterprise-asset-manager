@@ -1,9 +1,3 @@
-<p align="center">
-  <img src="public/images/enterprise-asset-manager-banner.png"
-       alt="Enterprise Asset Manager"
-       width="100%">
-</p>
-
 # 🏢 Enterprise Asset Manager — Enterprise Asset & Maintenance Management System
 
 [![GitHub Repository](https://img.shields.io/badge/GitHub-edenunix%2Fenterprise--asset--manager-181717?style=flat&logo=github)](https://github.com/edenunix/enterprise-asset-manager)
@@ -22,6 +16,13 @@
 > **Live Application:** https://enterprise-asset-manager-nine.vercel.app/
 
 ---
+
+<p align="center">
+  <img src="public/images/enterprise-asset-manager-banner.png"
+       alt="Enterprise Asset Manager"
+       width="100%">
+</p>
+
 
 ## 📑 Table of Contents
 
