@@ -23,6 +23,17 @@
        width="100%">
 </p>
 
+01 — Dashboard
+![Enterprise Asset Manager Dashboard](docs/screenshots/dashboard.png)
+
+02 — Asset Management
+![Asset Management](docs/screenshots/assets.png)
+
+03 — Maintenance Management
+![Maintenance Management](docs/screenshots/maintenance.png)
+
+04 — Financial Management & Reports
+![Financial Management](docs/screenshots/finance-reports.png)
 
 ## 📑 Table of Contents
 
